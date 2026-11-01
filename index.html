@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="theme-color" content="#070A12">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Chapters</title>
+  <meta name="description" content="A shared ebook library: authors publish chapter by chapter, readers follow along on any device.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&family=Literata:opsz,wght@7..72,400;7..72,600&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app"><p class="loading">Opening the library…</p></div>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <!-- Order matters: settings, then data, then avatar drawing, the music player, then the app -->
+  <script src="js/config.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/rewards.js"></script>
+  <script src="js/pirate.js"></script>
+  <script src="js/achievements.js"></script>
+  <script src="js/search.js"></script>
+  <script src="js/avatar.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

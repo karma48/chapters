@@ -1,0 +1,110 @@
+rules_version = '2';
+
+// ============================================================
+//  SECURITY RULES for Chapters
+//  Paste this whole file into: Firebase console > Firestore
+//  Database > Rules, then press Publish.
+//
+//  These rules are what really protect the app. Hiding a
+//  button in the code is not enough, because anyone can
+//  change code in their own browser.
+// ============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- helpers ----------
+    function signedIn() { return request.auth != null; }
+    function myId() { return request.auth.uid; }
+    function me() { return get(/databases/$(database)/documents/users/$(myId())).data; }
+    function isAuthor() { return signedIn() && me().role == 'author'; }
+    // approved readers and all authors can read books
+    function canRead() { return signedIn() && (me().role == 'author' || me().status == 'approved'); }
+
+    // ---------- users ----------
+    match /users/{userId} {
+      // you can see yourself; authors can see everyone (to approve readers)
+      allow read: if signedIn() && (userId == myId() || isAuthor());
+
+      // sign-up: you can only create yourself, as a WAITING READER.
+      // The OWNER email may sign up as the first author.
+      // OWNER: this email must match OWNER_EMAIL in js/config.js
+      allow create: if signedIn() && userId == myId()
+        && request.resource.data.keys().hasOnly(['name', 'email', 'role', 'status', 'avatar', 'createdAt'])
+        && ((request.resource.data.role == 'reader' && request.resource.data.status == 'waiting')
+          || (request.resource.data.role == 'author' && request.resource.data.status == 'approved'
+              && request.auth.token.email.lower() == 'nambiararyan24@gmail.com'));
+
+      // you can change your own name, avatar, author request,
+      // reading days (streaks), flags and achievements, nothing else
+      allow update: if (signedIn() && userId == myId()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['avatar', 'name', 'authorRequest', 'readDays', 'flags', 'achievements'])
+          && (!('authorRequest' in request.resource.data) || request.resource.data.authorRequest is bool))
+        // authors can approve/remove a READER, or make them an author
+        || (isAuthor() && resource.data.role == 'reader'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'role', 'authorRequest'])
+          && request.resource.data.status in ['waiting', 'approved', 'rejected', 'removed']
+          && (request.resource.data.role == 'reader'
+              || (request.resource.data.role == 'author' && request.resource.data.status == 'approved')));
+
+      allow delete: if false;
+
+      // ---------- unlocked reward items (one document per item) ----------
+      match /items/{itemId} {
+        allow read: if signedIn() && userId == myId();
+        // you can only unlock for yourself, and items can't be taken back.
+        // Monthly Drop items ("drop-YEAR-MONTH-...") can only be unlocked
+        // on days 1 to 7 of that month, using Firebase's own clock.
+        allow create: if canRead() && userId == myId()
+          && (!itemId.matches('drop-.*')
+              || (itemId.matches('drop-' + string(request.time.year()) + '-' + string(request.time.month()) + '-.*')
+                  && request.time.day() <= 7));
+        allow update, delete: if false;
+      }
+    }
+
+    // ---------- books ----------
+    match /books/{bookId} {
+      // published books for readers; authors also see their own drafts
+      allow read: if canRead()
+        && (resource.data.status == 'published' || resource.data.authorId == myId());
+
+      allow create: if isAuthor()
+        && request.resource.data.authorId == myId()
+        && request.resource.data.status == 'draft';
+
+      // authors can only change or delete their OWN books
+      allow update: if isAuthor()
+        && resource.data.authorId == myId()
+        && request.resource.data.authorId == myId()
+        && request.resource.data.status in ['draft', 'published'];
+      allow delete: if isAuthor() && resource.data.authorId == myId();
+
+      // ---------- chapters (inside a book) ----------
+      match /chapters/{chapterId} {
+        function book() { return get(/databases/$(database)/documents/books/$(bookId)).data; }
+
+        // readers: only Ready chapters of published books
+        // the author: every chapter of their own book
+        allow read: if canRead()
+          && ((resource.data.status == 'ready' && book().status == 'published')
+              || book().authorId == myId());
+
+        allow write: if isAuthor() && book().authorId == myId();
+      }
+    }
+
+    // ---------- reading progress ----------
+    match /progress/{progressId} {
+      // you see your own progress; authors see everyone's
+      allow read: if signedIn() && (resource.data.readerId == myId() || isAuthor());
+
+      // you can only save your OWN progress (id is "yourId_bookId")
+      allow create, update: if canRead()
+        && request.resource.data.readerId == myId()
+        && progressId == myId() + '_' + request.resource.data.bookId;
+
+      allow delete: if false;
+    }
+  }
+}
