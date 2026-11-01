@@ -1,23 +1,27 @@
 // ============================================================
 //  FIREBASE SETTINGS
 // ------------------------------------------------------------
-//  Leave this as null to run the app in DEMO MODE.
-//  Demo mode saves everything in this browser only (good for
-//  practice). Open two tabs to see live updates between them.
-//
-//  To go live, replace null with your web app config from:
-//  Firebase console > Project settings > Your apps > Web app
-//
-//  Example:
-//  window.FIREBASE_CONFIG = {
-//    apiKey: "AIza...",
-//    authDomain: "your-project.firebaseapp.com",
-//    projectId: "your-project",
-//    appId: "1:123:web:abc"
-//  };
+//  Set to null to run the app in DEMO MODE (data saved in this
+//  browser only). These values are safe to be public: the
+//  security rules in firestore.rules are what protect the data.
+//  From: Firebase console > Project settings > Your apps > Web app
 // ============================================================
 
-window.FIREBASE_CONFIG = null;
+window.FIREBASE_CONFIG = {
+
+  apiKey: "AIzaSyCfdqqwXajxOuVESO_DZBc2dfGiTlDQoT0",
+
+  authDomain: "chapters-library.firebaseapp.com",
+
+  projectId: "chapters-library",
+
+  storageBucket: "chapters-library.firebasestorage.app",
+
+  messagingSenderId: "1061656045507",
+
+  appId: "1:1061656045507:web:1ca837fc4bd67303b43f76"
+
+};
 
 // ============================================================
 //  OWNER EMAIL: the first author.
